@@ -13,7 +13,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProviderIcon } from "./ProviderIcon";
 
 type Props = {
@@ -28,6 +28,17 @@ function maskKey(key: string): string {
   return `${key.slice(0, 4)}${"•".repeat(8)}${key.slice(-4)}`;
 }
 
+/** Strip a GCP Service Account JSON to only the fields Vertex AI actually needs.
+ *  This keeps us safely under the Windows Credential Manager 2560-char limit. */
+function minifyServiceAccountJson(raw: string): string {
+  const parsed = JSON.parse(raw);
+  const slim: Record<string, string> = {};
+  for (const field of ["type", "project_id", "private_key_id", "private_key", "client_email"]) {
+    if (parsed[field]) slim[field] = parsed[field];
+  }
+  return JSON.stringify(slim);
+}
+
 export function ProviderKeyCard({
   provider,
   currentKey,
@@ -39,6 +50,9 @@ export function ProviderKeyCard({
   const [reveal, setReveal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isVertex = provider.id === "vertex";
 
   useEffect(() => {
     setEditing(!currentKey);
@@ -74,6 +88,30 @@ export function ProviderKeyCard({
     setEditing(!currentKey);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const text = ev.target?.result;
+      if (typeof text !== "string") return;
+      setError(null);
+      setSaving(true);
+      try {
+        const minified = minifyServiceAccountJson(text);
+        await onSave(minified);
+        setValue("");
+      } catch (err) {
+        setError(`Failed to read credentials: ${String(err)}`);
+      } finally {
+        setSaving(false);
+        // reset input so same file can be re-uploaded
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div
       className={cn(
@@ -107,13 +145,51 @@ export function ProviderKeyCard({
 
       {editing ? (
         <div className="flex flex-col gap-1.5">
+          {/* Vertex AI: show JSON file upload option */}
+          {isVertex && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[10.5px] text-muted-foreground">
+                Upload a GCP Service Account JSON, or paste credentials below.
+              </span>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  id="vertex-json-upload"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-7 gap-1.5 px-2.5 text-[11px]"
+                >
+                  {saving ? <Spinner className="size-3" /> : null}
+                  Upload credentials.json
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <div className="h-px flex-1 bg-border/60" />
+                <span>or paste manually</span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
+            </div>
+          )}
+
           <div className="relative">
             <Input
               type={reveal ? "text" : "password"}
               autoComplete="off"
               spellCheck={false}
               placeholder={
-                provider.keyPrefix ? `${provider.keyPrefix}…` : "Paste API key"
+                isVertex
+                  ? `{"project_id":"…","client_email":"…","private_key":"…"}`
+                  : provider.keyPrefix
+                    ? `${provider.keyPrefix}…`
+                    : "Paste API key"
               }
               value={value}
               disabled={saving}

@@ -44,6 +44,7 @@ const PROVIDER_ICON = {
   openai: ChatGptIcon,
   anthropic: ClaudeIcon,
   google: GoogleGeminiIcon,
+  vertex: GoogleGeminiIcon,
   xai: Grok02Icon,
   cerebras: CpuIcon,
   groq: FlashIcon,

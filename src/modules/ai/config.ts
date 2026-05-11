@@ -4,6 +4,7 @@ export type ProviderId =
   | "openai"
   | "anthropic"
   | "google"
+  | "vertex"
   | "xai"
   | "cerebras"
   | "groq"
@@ -39,6 +40,13 @@ export const PROVIDERS: readonly ProviderInfo[] = [
     keyringAccount: "google-api-key",
     keyPrefix: null,
     consoleUrl: "https://aistudio.google.com/apikey",
+  },
+  {
+    id: "vertex",
+    label: "Google Vertex",
+    keyringAccount: "vertex-api-key",
+    keyPrefix: null,
+    consoleUrl: "https://console.cloud.google.com/vertex-ai",
   },
   {
     id: "xai",
@@ -142,6 +150,31 @@ export const MODELS = [
     label: "Gemini 3 Flash",
     hint: "Fast",
   },
+  // Google Vertex
+  {
+    id: "vertex-gemini-3.1-pro-preview",
+    provider: "vertex",
+    label: "Vertex Gemini 3.1 Pro",
+    hint: "Best",
+  },
+  {
+    id: "vertex-gemini-3-flash-preview",
+    provider: "vertex",
+    label: "Vertex Gemini 3 Flash",
+    hint: "Fast",
+  },
+  {
+    id: "vertex-gemini-2.5-flash",
+    provider: "vertex",
+    label: "Vertex Gemini 2.5 Flash",
+    hint: "Fast",
+  },
+  {
+    id: "vertex-gemma-4-31b-it",
+    provider: "vertex",
+    label: "Vertex Gemma 4 31B",
+    hint: "Open Weights",
+  },
   // xAI
   {
     id: "grok-4.20-reasoning",
@@ -213,6 +246,10 @@ export const MODEL_CONTEXT_LIMITS: Record<string, number> = {
   "claude-opus-4-7": 200_000,
   "gemini-3.1-pro-preview": 1_000_000,
   "gemini-3-flash-preview": 1_000_000,
+  "vertex-gemini-3.1-pro-preview": 1_000_000,
+  "vertex-gemini-3-flash-preview": 1_000_000,
+  "vertex-gemini-2.5-flash": 1_000_000,
+  "vertex-gemma-4-31b-it": 8_192,
   "grok-4.20-reasoning": 2_000_000,
   "grok-4.20-non-reasoning": 2_000_000,
   "gpt-oss-120b": 128_000,

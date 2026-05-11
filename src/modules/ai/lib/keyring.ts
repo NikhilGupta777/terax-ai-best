@@ -13,6 +13,7 @@ export const EMPTY_PROVIDER_KEYS: ProviderKeys = {
   openai: null,
   anthropic: null,
   google: null,
+  vertex: null,
   xai: null,
   cerebras: null,
   groq: null,
